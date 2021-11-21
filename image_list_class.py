@@ -112,9 +112,9 @@ class image_list():
                 
         print('Bad Images Removed.')
     
-    def trim_edge_all(self):
+    def trim_edge_all(self, border = -5):
         for elem in self.img_list:
-            elem.trim_edge()
+            elem.trim_edge(border)
     
     def planicent_all(self, croppix = 400, accuracy = 10, Debug = False):
         for elem in self.img_list:
@@ -146,6 +146,14 @@ class image_list():
     def crop_all(self,crop = 'wide'):
         for elem in self.img_list:
             elem.crop(crop=crop)
+        if crop == 'wide':
+            sizes0 = []
+            sizes1 = []
+            for elem in self.img_list:
+                sizes0.append(elem.img.shape[0])
+                sizes1.append(elem.img.shape[1])
+            print(sizes0)
+            print(sizes1)
     
     def rotate_all(self):
         for elem in self.img_list:
@@ -174,7 +182,7 @@ class image_list():
                 max_x = x
         #print('y = '+str(max_y))
         #print('x = '+str(max_x))
-        print(len(self.mirror_imgs))
+        #print(len(self.mirror_imgs))
         
         for k in range(len(self.mirror_imgs)):
             if (self.mirror_imgs[k].shape[0] != max_y) or (self.mirror_imgs[k].shape[1] != max_x):
@@ -256,9 +264,9 @@ class image_list():
         self.crop_all(crop='close')
         self.rotate_all()
         #self.planicent_all()
-        self.write_img_to_png('/data/nemesis/Neptune_HST/data/pngs/'+self.img_list[0].filter+'/', wavlen = wavlen, k=0,cmin=pngmin, cmax = pngmax)
+        self.write_img_to_png('C:/Users/jamie/Documents/Planet_Image_Processing/processed_data/pngs/'+self.img_list[0].filter+'/', wavlen = wavlen, k=0,cmin=pngmin, cmax = pngmax)
         self.isolate_backgrounds(showBackground = False, averageCutoff = averageCutoff)
-        self.write_to_fits(filepath = '/data/nemesis/Neptune_HST/data/fits/',crop_of_img='close')
+        self.write_to_fits(filepath = 'C:/Users/jamie/Documents/Planet_Image_Processing/processed_data/fits/',crop_of_img='close')
         
     def raw_to_map(self, k, wavlen, badimgs = [], averageCutoff = 0.5, show_results = False,pngmin = 0, pngmax = 1):
         self.trim_edge_all()
@@ -276,7 +284,7 @@ class image_list():
             self.isolate_backgrounds(averageCutoff = averageCutoff)
         else:
             self.isolate_backgrounds(showBackground = False, averageCutoff = averageCutoff)
-        self.write_to_fits(filepath = '/data/nemesis/Neptune_HST/data/fits/',crop_of_img='superzoom')
+        self.write_to_fits(filepath = 'C:/Users/jamie/Documents/Planet_Image_Processing/processed_data/fits/',crop_of_img='superzoom')
         self.change_radii_all()
         if show_results:
             self.show_grid()
@@ -288,7 +296,15 @@ class image_list():
         else:
             self.map_all(showMaps = False)
     
-    def write_img_to_png(self, filepath, wavlen, k = 0, cmap = 'bone', cmin=0, cmax=1):
+    def write_img_to_png(self, filepath, wavlen, k = 0, cmap = 'bone', cmin=0, cmax=None):
+        if cmax == None:
+            cmax = 0
+            for i in range(len(self.img_list)):
+                tempmax = np.nanmax(self.img_list[i].img)
+                if tempmax > cmax:
+                    cmax = tempmax
+        
+        
         for elem in self.img_list:
             time = str(elem.expstart)
             time = time.replace('.','_')
@@ -322,18 +338,40 @@ class image_list():
 #                     else:
 #                         phase[i,j] = float(elem.eph['phi'])
             
-            hduimg = ast.PrimaryHDU(elem.img, header = elem.hdr)
-            hduback = ast.ImageHDU(elem.background)
-            hducloud = ast.ImageHDU(elem.cloud_fill)
-            hdulong = ast.ImageHDU(longimg)
-            hdulat = ast.ImageHDU(latimg)
-            hdumu0 = ast.ImageHDU(mu0)
-            hdumu = ast.ImageHDU(mu)
-#             hduphase = ast.ImageHDU(phase)
-            hdulist = ast.HDUList([hduimg,hduback,hducloud,hdulong,hdulat,hdumu,hdumu0])
-            location = str(filepath)+elem.filter+'/'+elem.identifier+'_'+crop_of_img+'.fits'
-            hdulist.writeto(location)
-            print(elem.identifier+' images written to fits.')
+            if crop_of_img == 'wide':
+                hduimg = ast.PrimaryHDU(elem.img, header = elem.hdr)
+                hdulong = ast.ImageHDU(longimg, header = elem.scihdr)
+                hdulat = ast.ImageHDU(latimg)
+                hdumu0 = ast.ImageHDU(mu0)
+                hdumu = ast.ImageHDU(mu)
+    #             hduphase = ast.ImageHDU(phase)
+                hdulist = ast.HDUList([hduimg,hdulong,hdulat,hdumu,hdumu0])
+                location = str(filepath)+'/'+elem.identifier+'_'+crop_of_img+'.fits'
+                hdulist.writeto(location)
+                print(elem.identifier+' images written to fits.')
+            else:
+                hduimg = ast.PrimaryHDU(elem.img, header = elem.hdr)
+                hduback = ast.ImageHDU(elem.background, header = elem.scihdr)
+                hducloud = ast.ImageHDU(elem.cloud_fill)
+                hdulong = ast.ImageHDU(longimg)
+                hdulat = ast.ImageHDU(latimg)
+                hdumu0 = ast.ImageHDU(mu0)
+                hdumu = ast.ImageHDU(mu)
+    #             hduphase = ast.ImageHDU(phase)
+                hdulist = ast.HDUList([hduimg,hduback,hducloud,hdulong,hdulat,hdumu,hdumu0])
+                location = str(filepath)+'/'+elem.identifier+'_'+crop_of_img+'.fits'
+                hdulist.writeto(location)
+                print(elem.identifier+' images written to fits.')
+            
+        hdubackground = ast.PrimaryHDU(self.avg_background)
+        hdulong = ast.ImageHDU(longimg)
+        hdulat = ast.ImageHDU(latimg)
+        hdumu0 = ast.ImageHDU(mu0)
+        hdumu = ast.ImageHDU(mu)
+        hdulist = ast.HDUList([hdubackground,hdulong,hdulat,hdumu,hdumu0])
+        location = str(filepath)+'/avgbackground_'+crop_of_img+'.fits'
+        hdulist.writeto(location)
+        print('Average Background written to fits.')
             
     def write_map_to_fits(self, filepath):
         for elem in self.img_list:
@@ -385,8 +423,10 @@ class image_list():
                         offset_list[idx][1]:offset_list[idx][1]+shape_list[idx][1]] = img_list[idx]
             output_list.append(img_aligned)
         
+        deinterp_list = []
         for img in output_list:
-            img = interp_image(img, 1/centre_fac)
+            deinterp_list.append(interp_image(img, 1/centre_fac))
+        output_list = deinterp_list
             
         for i in range(len(output_list)):
             self.img_list[i].img = output_list[i]
@@ -399,5 +439,9 @@ class image_list():
                 image = exp_despike(image, sigma)
             elem.img = image
             print('image '+ elem.identifier +' has had hot pixels removed.')
-
+    
+    def set_planicentres_to_centre(self):
+        for elem in self.img_list:
+            elem.planicentre = [elem.img.shape[0]/2, elem.img.shape[1]/2, elem.radius]
+            
 print('image_list class initialised.')
