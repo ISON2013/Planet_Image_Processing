@@ -21,33 +21,35 @@ class image():
     def __init__(self, filepath):
         self.filepath = filepath
         self.img, self.hdr, self.scihdr = open_img(self.filepath) #opens the image
-
-        self.instrument = self.hdr['INSTRUME'] #pulls important values from fits header
-        self.expstart = self.hdr['EXPSTART']
-        self.exptime = self.hdr['EXPTIME']
-        if 'WFC3' in self.instrument:
-            self.filter = self.hdr['FILTER']
-        else: 
-            self.filter = self.hdr['FILTNAM1']
-
-        self.orientat = self.scihdr['ORIENTAT'] #pulls important values from sci header
-        self.identifier = self.scihdr['EXPNAME']
-        self.photmode = self.scihdr['PHOTMODE']
-        self.photflam = self.scihdr['PHOTFLAM']
-        self.photplam = self.scihdr['PHOTPLAM']
-        self.photbw = self.scihdr['PHOTBW']
-        self.photzpt = self.scihdr['PHOTZPT']
-
-        self.eph = get_ephemerides(target = 'neptune', loc='hst', epoch=self.expstart) #ephemeris from JPL Horizons
-
-        self.nepdist = float(self.eph['r']) #pulls important values from ephemeris
-        self.ang_width = float(self.eph['ang_width'])
-        self.npole_ang = float(self.eph['NPole_ang'])
-        self.obslong = float(self.eph['PDObsLon'])
-        self.obslat = float(self.eph['PDObsLat'])
-        self.sol_ang = -float(self.eph['alpha'])
         
-        self.raw = self.img #saves a raw version of the image to rollback if needed.
+        if 'drz' in filepath:
+
+            self.instrument = self.hdr['INSTRUME'] #pulls important values from fits header
+            self.expstart = self.hdr['EXPSTART']
+            self.exptime = self.hdr['EXPTIME']
+            if 'WFC3' in self.instrument:
+                self.filter = self.hdr['FILTER']
+            else: 
+                self.filter = self.hdr['FILTNAM1']
+
+            self.orientat = self.scihdr['ORIENTAT'] #pulls important values from sci header
+            self.identifier = self.scihdr['EXPNAME']
+            self.photmode = self.scihdr['PHOTMODE']
+            self.photflam = self.scihdr['PHOTFLAM']
+            self.photplam = self.scihdr['PHOTPLAM']
+            self.photbw = self.scihdr['PHOTBW']
+            self.photzpt = self.scihdr['PHOTZPT']
+
+            self.eph = get_ephemerides(target = 'neptune', loc='hst', epoch=self.expstart) #ephemeris from JPL Horizons
+
+            self.nepdist = float(self.eph['r']) #pulls important values from ephemeris
+            self.ang_width = float(self.eph['ang_width'])
+            self.npole_ang = float(self.eph['NPole_ang'])
+            self.obslong = float(self.eph['PDObsLon'])
+            self.obslat = float(self.eph['PDObsLat'])
+            self.sol_ang = -float(self.eph['alpha'])
+
+            self.raw = self.img #saves a raw version of the image to rollback if needed.
         
         if 'WFC3' in self.instrument: #sets parameters which rely on other parameters
             self.platescale = 0.04
@@ -301,7 +303,7 @@ class image():
         if flux == None:
             lookup = self.instrument.lower()+self.filter.lower()
             
-            with open('/data/nemesis/Neptune_HST/ancillary/filter_fluxes/filter_solar_fluxes.txt', 'r') as fileobj:
+            with open('C:/Users/jamie/Documents/Planet_Image_Processing/ancilliary/filter_fluxes/filter_solar_fluxes.txt', 'r') as fileobj:
                 for line in fileobj:
                     if lookup in line:
                         flux = float(str(line).split(',')[2])
