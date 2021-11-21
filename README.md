@@ -8,3 +8,5 @@ Dependancies:
 - matplotlib
 - astropy
 - photutils
+
+In it's current state, this code takes an image, and turns it into an archival fits format. Code to map an image is present, however it is not recommended to be used, I am planning on creating a "archive_image" class, which opens the archival format, and can perform photometry, and map a given image. I am also planning on creating an "archive_image_list" class, to perform these steps for a series of images, and also make note of groups of images within the dataset with close image taken timings, for creation of a "Neptune Rotation", allowing for full longitude mapping range.
